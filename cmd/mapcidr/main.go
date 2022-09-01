@@ -286,11 +286,22 @@ func process(wg *sync.WaitGroup, chancidr, outputchan chan string) {
 		ranger   *ipranger.IPRanger
 		err      error
 		hasSort  = options.SortAscending || options.SortDescending
+		ipRange  []string
 	)
 
 	ranger, _ = ipranger.New()
 
 	for cidr := range chancidr {
+
+		// check the given input has IP range
+		if strings.Contains(cidr, "-") {
+			ipRange = append(ipRange, strings.Split(cidr, "-")...)
+			if len(ipRange) > 2 {
+				gologger.Fatal().Msgf("%s\n", "Range must contains only two IP addresses.")
+			}
+			continue
+		}
+
 		// if it's an ip turn it into a cidr
 		if ip := net.ParseIP(cidr); ip != nil {
 			switch {
@@ -374,12 +385,20 @@ func process(wg *sync.WaitGroup, chancidr, outputchan chan string) {
 
 	// Aggregate all ips into the minimal subset possible
 	if options.Aggregate {
-		cCidrsIPV4, cCidrsIPV6 := mapcidr.CoalesceCIDRs(allCidrs)
-		for _, cidrIPV4 := range cCidrsIPV4 {
-			outputchan <- cidrIPV4.String()
-		}
-		for _, cidrIPV6 := range cCidrsIPV6 {
-			outputchan <- cidrIPV6.String()
+		// Find out the possible CIDR ranges from given IP address range
+		if len(ipRange) > 0 {
+			cidrs := mapcidr.GetCIDRFromIPRange(ipRange[0], ipRange[1])
+			for _, cidr := range cidrs {
+				outputchan <- cidr
+			}
+		} else {
+			cCidrsIPV4, cCidrsIPV6 := mapcidr.CoalesceCIDRs(allCidrs)
+			for _, cidrIPV4 := range cCidrsIPV4 {
+				outputchan <- cidrIPV4.String()
+			}
+			for _, cidrIPV6 := range cCidrsIPV6 {
+				outputchan <- cidrIPV6.String()
+			}
 		}
 	}
 

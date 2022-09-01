@@ -44,3 +44,9 @@ func TestIpEncodings(t *testing.T) {
 	res = AlterIP("127.0.1.0", []string{"11"}, 0, false)
 	require.Equal(t, []string{"127.0.256"}, res)
 }
+
+func TestIpRanges(t *testing.T) {
+	errorMsg := "unexpected result"
+	require.Equal(t, []string{"192.168.0.0/24"}, GetCIDRFromIPRange("192.168.0.0", "192.168.0.255"), errorMsg)
+	require.Equal(t, []string{"192.168.0.1/32", "192.168.0.2/31", "192.168.0.4/30", "192.168.0.8/29", "192.168.0.16/28", "192.168.0.32/27", "192.168.0.64/26", "192.168.0.128/25"}, GetCIDRFromIPRange("192.168.0.1", "192.168.0.255"), errorMsg)
+}

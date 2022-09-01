@@ -10,12 +10,14 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"net/netip"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/projectdiscovery/stringsutil"
+	"go4.org/netipx"
 )
 
 const (
@@ -1041,4 +1043,41 @@ func overflowLastOctect(ip net.IP) (string, error) {
 		return "", errors.New("can't convert to overflow ip")
 	}
 	return fmt.Sprintf("%s.%s.%d", parts[0], parts[1], part2+part3), nil
+}
+
+/*
+The intent here is to get the CIDR range from the IP range.
+Example:
+
+(i) Given the IPs starts from 192.168.0.0 and 192.168.0.255 as last IP.
+This will give the CIDR range as 192.168.0.0/24
+
+(ii) Given the IPs starts from 192.168.0.1 and 192.168.0.255 as last IP.
+This will give CIDR ranges as
+
+	192.168.0.1/32
+	192.168.0.2/31
+	192.168.0.4/30
+	192.168.0.8/29
+	192.168.0.16/28
+	192.168.0.32/27
+	192.168.0.64/26
+	192.168.0.128/25
+*/
+func GetCIDRFromIPRange(start, end string) []string {
+	var builder netipx.IPSetBuilder
+
+	builder.AddRange(
+		netipx.IPRangeFrom(
+			netip.MustParseAddr(start),
+			netip.MustParseAddr(end),
+		),
+	)
+
+	arr := []string{}
+	set, _ := builder.IPSet()
+	for _, p := range set.Prefixes() {
+		arr = append(arr, p.String())
+	}
+	return arr
 }
