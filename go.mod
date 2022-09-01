@@ -12,6 +12,7 @@ require (
 	github.com/projectdiscovery/sliceutil v0.0.0-20220617151003-15892688e1d6
 	github.com/projectdiscovery/stringsutil v0.0.0-20220612082425-0037ce9f89f3
 	github.com/stretchr/testify v1.8.0
+	go4.org/netipx v0.0.0-20220812043211-3cc044ffd68d
 )
 
 require (
